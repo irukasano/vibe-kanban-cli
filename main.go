@@ -35,6 +35,7 @@ func registerCommands() {
 	commands.Register(commands.NewShowCommand())
 	commands.Register(commands.NewExecCommand())
 	commands.Register(commands.NewStatusCommand())
+	commands.Register(commands.NewPickCommand())
 }
 
 func printUsage() {
