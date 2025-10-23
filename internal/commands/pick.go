@@ -95,7 +95,7 @@ func (c *PickCommand) Run(args []string) error {
 			"--with-nth", "2",
 			"--preview-window", "right:60%:wrap",
 			"--preview", previewCmd,
-			"--expect", "ctrl-p",
+			"--expect", "ctrl-p,x",
 			"--header", formatProjectHeader(projects, currentProjectIndex),
 		)
 		if err != nil {
@@ -127,6 +127,10 @@ func (c *PickCommand) Run(args []string) error {
 		}
 
 		taskID := strings.SplitN(taskSelection, "\t", 2)[0]
+		if taskKey == "x" {
+			fmt.Printf("Running exec for task %s...\n", taskID)
+			return NewExecCommand().Run([]string{taskID})
+		}
 
 		showArgs := []string{taskID}
 		if withMessages {
@@ -292,6 +296,12 @@ func parseFzfOutput(raw []byte, expectUsed bool) (selection string, key string) 
 
 func formatProjectHeader(projects []project, currentIndex int) string {
 	var b strings.Builder
+	b.WriteString(sectionDivider("Actions"))
+	b.WriteString("\n")
+	b.WriteString("  Enter: 詳細表示\n")
+	b.WriteString("  x: exec を実行\n")
+	b.WriteString("  Ctrl-P: プロジェクト再選択\n")
+	b.WriteString("\n")
 	b.WriteString(sectionDivider("Projects (Ctrl-P で再選択)"))
 	b.WriteString("\n")
 	for i, p := range projects {
