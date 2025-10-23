@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/websocket"
@@ -60,7 +62,7 @@ func (c *ShowCommand) Run(args []string) error {
 	fmt.Println(task["description"])
 
 	if withMessages {
-		fmt.Println("\n--- Messages ---")
+		fmt.Printf("\n%s\n", sectionDivider("Messages"))
 		if err := showTaskWithMessages(id); err != nil {
 			return err
 		}
@@ -69,7 +71,13 @@ func (c *ShowCommand) Run(args []string) error {
 }
 
 type executionProcess struct {
-	ID string `json:"id"`
+	ID             string `json:"id"`
+	ExecutorAction struct {
+		Typ struct {
+			Type   string `json:"type"`
+			Prompt string `json:"prompt"`
+		} `json:"typ"`
+	} `json:"executor_action"`
 }
 
 func showTaskWithMessages(taskID string) error {
@@ -118,6 +126,9 @@ func showTaskWithMessages(taskID string) error {
 
 	for _, exec := range execWrapper.Data {
 		fmt.Printf("🔹 Process ID: %s\n", exec.ID)
+		if prompt := strings.TrimSpace(exec.ExecutorAction.Typ.Prompt); prompt != "" {
+			fmt.Printf("🧑 User Prompt:\n%s\n\n", prompt)
+		}
 		if err := readNormalizedLogs(exec.ID); err != nil {
 			return err
 		}
@@ -188,7 +199,7 @@ func readNormalizedLogs(execID string) error {
 		case strings.HasPrefix(entry, "thinking:"):
 			fmt.Printf("── %s\n", strings.TrimPrefix(entry, "thinking:"))
 		case strings.HasPrefix(entry, "tool_use:"):
-			fmt.Printf("── running: %s\n", strings.TrimPrefix(entry, "tool_use:"))
+			fmt.Printf("── > %s\n", strings.TrimPrefix(entry, "tool_use:"))
 		case strings.HasPrefix(entry, "user_message:"):
 			fmt.Printf("\n> %s\n", strings.TrimPrefix(entry, "user_message:"))
 		case strings.HasPrefix(entry, "assistant_message:"):
@@ -196,4 +207,27 @@ func readNormalizedLogs(execID string) error {
 		}
 	}
 	return nil
+}
+
+func sectionDivider(title string) string {
+	width := 80
+	if cols := os.Getenv("COLUMNS"); cols != "" {
+		if v, err := strconv.Atoi(cols); err == nil && v > 0 {
+			width = v
+		}
+	}
+
+	cleanTitle := strings.TrimSpace(title)
+	if cleanTitle == "" {
+		cleanTitle = "-"
+	}
+
+	padding := width - len(cleanTitle) - 2
+	if padding < 2 {
+		padding = 2
+	}
+
+	left := padding / 2
+	right := padding - left
+	return fmt.Sprintf("%s %s %s", strings.Repeat("-", left), cleanTitle, strings.Repeat("-", right))
 }
