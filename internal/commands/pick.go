@@ -292,7 +292,8 @@ func parseFzfOutput(raw []byte, expectUsed bool) (selection string, key string) 
 
 func formatProjectHeader(projects []project, currentIndex int) string {
 	var b strings.Builder
-	b.WriteString("Projects (Ctrl-P で再選択):\n")
+	b.WriteString(sectionDivider("Projects (Ctrl-P で再選択)"))
+	b.WriteString("\n")
 	for i, p := range projects {
 		marker := "  "
 		if i == currentIndex {
